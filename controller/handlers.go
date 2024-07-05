@@ -216,3 +216,107 @@ func DeleteTask(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Task deleted"})
 }
+
+func CreateTicketAssignment(c *gin.Context) {
+	var ticketAssignment models.TicketAssignment
+	if err := c.ShouldBindJSON(&ticketAssignment); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	ticketAssignment.AssignedAt = time.Now()
+
+	query := `INSERT INTO TicketAssignments (TicketID, AssigneeID, AssignedAt) VALUES ($1, $2, $3) RETURNING AssignmentID`
+	err := models.DB.QueryRow(query, ticketAssignment.TicketID, ticketAssignment.AssigneeID, ticketAssignment.AssignedAt).Scan(&ticketAssignment.AssignmentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, ticketAssignment)
+}
+
+func GetTicketAssignments(c *gin.Context) {
+	rows, err := models.DB.Query("SELECT AssignmentID, TicketID, AssigneeID, AssignedAt FROM TicketAssignments")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	var ticketAssignments []models.TicketAssignment
+	for rows.Next() {
+		var ticketAssignment models.TicketAssignment
+		if err := rows.Scan(&ticketAssignment.AssignmentID, &ticketAssignment.TicketID, &ticketAssignment.AssigneeID, &ticketAssignment.AssignedAt); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		ticketAssignments = append(ticketAssignments, ticketAssignment)
+	}
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, ticketAssignments)
+}
+
+func GetTicketAssignmentsByAssigneeID(c *gin.Context) {
+	assigneeID, err1 := strconv.Atoi(c.Param("assigneeID"))
+	if err1 != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid assignee ID"})
+		return
+	}
+
+	var ticketAssignments []models.TicketAssignment
+	query := "SELECT AssignmentID, TicketID, AssigneeID, AssignedAt FROM TicketAssignments WHERE AssigneeID = $1"
+	rows, err := models.DB.Query(query, assigneeID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var ticketAssignment models.TicketAssignment
+		if err := rows.Scan(&ticketAssignment.AssignmentID, &ticketAssignment.TicketID, &ticketAssignment.AssigneeID, &ticketAssignment.AssignedAt); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		ticketAssignments = append(ticketAssignments, ticketAssignment)
+	}
+
+	if err = rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, ticketAssignments)
+}
+func UpdateTicketAssignment(c *gin.Context) {
+	id := c.Param("id")
+	var ticketAssignment models.TicketAssignment
+	if err := c.ShouldBindJSON(&ticketAssignment); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	query := "UPDATE TicketAssignments SET TicketID = $1, AssigneeID = $2, AssignedAt = $3 WHERE AssignmentID = $4"
+	_, err := models.DB.Exec(query, ticketAssignment.TicketID, ticketAssignment.AssigneeID, ticketAssignment.AssignedAt, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "TicketAssignment updated"})
+}
+
+func DeleteTicketAssignment(c *gin.Context) {
+	id := c.Param("id")
+	query := "DELETE FROM TicketAssignments WHERE AssignmentID = $1"
+	_, err := models.DB.Exec(query, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "TicketAssignment deleted"})
+}

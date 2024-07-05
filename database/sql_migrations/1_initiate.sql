@@ -34,11 +34,12 @@ CREATE TABLE Tasks (
 );
 CREATE TABLE TicketAssignments (
     AssignmentID SERIAL PRIMARY KEY,
-    TicketID INT NOT NULL,
+    TicketID INT NOT NULL UNIQUE,
     AssigneeID INT NOT NULL,
     AssignedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (TicketID) REFERENCES Tickets(TicketID),
     FOREIGN KEY (AssigneeID) REFERENCES Users(UserID)
 );
+
 
 -- *migrate StetementEnd

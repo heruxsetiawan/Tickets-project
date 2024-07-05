@@ -30,6 +30,11 @@ func main() {
 		authenticated.POST("/tickets/tasks", controller.CreateTask)
 		authenticated.PUT("/tasks/:id", controller.UpdateTask)
 		authenticated.DELETE("/tasks/:id", controller.DeleteTask)
+
+		authenticated.POST("/ticket-assignments", controller.CreateTicketAssignment)
+		authenticated.GET("/ticket-assignments/:assigneeID", controller.GetTicketAssignmentsByAssigneeID)
+		authenticated.PUT("/ticket-assignments/:id", controller.UpdateTicketAssignment)
+		authenticated.DELETE("/ticket-assignments/:id", controller.DeleteTicketAssignment)
 	}
 
 	log.Fatal(router.Run(":8080"))
