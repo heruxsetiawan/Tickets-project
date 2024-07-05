@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	//main
 	models.InitializeDB()
 
 	router := gin.Default()
